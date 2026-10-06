@@ -1,0 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+body {@apply m-0 bg-slate-950 text-slate-100 antialiased; font-family: Inter,system-ui,sans-serif;}
+button {@apply rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm font-medium transition hover:border-teal-400 disabled:cursor-not-allowed disabled:opacity-40;}
+input,select {@apply w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-none focus:border-teal-400;}
+label {@apply text-sm text-slate-400;}

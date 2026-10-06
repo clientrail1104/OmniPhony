@@ -1,0 +1,26 @@
+{
+  "name": "@omni/web",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && node scripts/build.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "sip.js": "0.21.2"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.13",
+    "@types/react-dom": "19.1.9",
+    "typescript": "5.9.2",
+    "vite": "7.1.7",
+    "tailwindcss": "3.4.17",
+    "autoprefixer": "10.4.21",
+    "postcss": "8.5.6",
+    "esbuild": "0.25.12"
+  }
+}
