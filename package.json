@@ -1,0 +1,1 @@
+{"name":"omni500-reference","private":true,"version":"0.1.0","type":"module","workspaces":["apps/api","apps/web"],"scripts":{"test":"python3 -m unittest discover -s tests -v","typecheck":"npm run typecheck -w apps/web","build":"npm run build -w apps/web","schema:validate":"prisma validate --schema db/schema.prisma"},"devDependencies":{"prisma":"6.16.3"}}
