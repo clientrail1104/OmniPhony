@@ -1,0 +1,41 @@
+# Run ONE role per dedicated Linux VM; repeat on the hosts in inventory.example.yml.
+# Host networking deliberately avoids NAT of advertised SIP/RTP addresses.
+name: omni-media
+services:
+  kamailio:
+    image: ${KAMAILIO_IMAGE:?Set audited Kamailio image digest with required modules}
+    profiles: [sip]
+    network_mode: host
+    restart: unless-stopped
+    command: [kamailio, -DD, -E, -f, /etc/kamailio/kamailio.cfg]
+    volumes: [./rendered/kamailio:/etc/kamailio:ro, ./certs:/etc/telecom/certs:ro]
+    security_opt: [no-new-privileges:true]
+    ulimits: {nofile: {soft: 131072, hard: 131072}}
+  freeswitch:
+    image: ${FREESWITCH_IMAGE:?Set audited FreeSWITCH image digest with Opus and required modules}
+    profiles: [media]
+    network_mode: host
+    restart: unless-stopped
+    # Image contract: /usr/local/freeswitch/bin and conf paths, foreground executable.
+    command: [/usr/local/freeswitch/bin/freeswitch, -nf, -nonat]
+    volumes:
+      - ./rendered/freeswitch:/usr/local/freeswitch/conf:ro
+      - ./certs:/etc/telecom/certs:ro
+      - recordings:/var/lib/freeswitch/recordings
+      - fs-log:/usr/local/freeswitch/log
+      - fs-db:/usr/local/freeswitch/db
+    ulimits: {nofile: {soft: 131072, hard: 131072}}
+    stop_grace_period: 120s
+  coturn:
+    image: ${COTURN_IMAGE:?Set audited Coturn image digest}
+    profiles: [turn]
+    network_mode: host
+    restart: unless-stopped
+    command: [-c, /etc/coturn/turnserver.conf]
+    volumes: [./rendered/coturn/turnserver.conf:/etc/coturn/turnserver.conf:ro, ./certs:/etc/telecom/certs:ro]
+    security_opt: [no-new-privileges:true]
+    ulimits: {nofile: {soft: 131072, hard: 131072}}
+volumes:
+  recordings: {}
+  fs-log: {}
+  fs-db: {}

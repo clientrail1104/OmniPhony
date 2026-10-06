@@ -1,0 +1,8 @@
+<include>
+ <X-PRE-PROCESS cmd="set" data="domain=voice.example.org"/>
+ <X-PRE-PROCESS cmd="set" data="external_rtp_ip=__PUBLIC_IP__"/>
+ <X-PRE-PROCESS cmd="set" data="external_sip_ip=__PUBLIC_IP__"/>
+ <X-PRE-PROCESS cmd="set" data="local_ip_v4=__PRIVATE_IP__"/>
+ <X-PRE-PROCESS cmd="set" data="global_codec_prefs=OPUS,PCMU,PCMA"/>
+ <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=OPUS,PCMU,PCMA"/>
+</include>

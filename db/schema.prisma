@@ -1,0 +1,331 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+enum Role {
+  SUPER_ADMIN
+  TENANT_ADMIN
+  QUEUE_MANAGER
+  BILLING_AUDITOR
+  AGENT
+}
+enum Presence {
+  OFFLINE
+  AVAILABLE
+  BUSY
+  BREAK
+  WRAP_UP
+}
+enum RateKind {
+  COST
+  SELL
+}
+enum Channel {
+  VOICE
+  WEBCHAT
+  WHATSAPP
+  FACEBOOK
+  INSTAGRAM
+  TELEGRAM
+  SMS
+  EMAIL
+}
+model Tenant {
+  id String @id @default(uuid()) @db.Uuid
+  name String
+  currency String @db.Char(3)
+  timezone String @default("Asia/Kuala_Lumpur")
+  createdAt DateTime @default(now()) @db.Timestamptz
+  users User[]
+  queues Queue[]
+  cards RateCard[]
+  trunks CarrierTrunk[]
+  wallets PrepaidWallet[]
+  invoices Invoice[]
+  channels ChannelCredential[]
+  calls CallLog[]
+}
+model User {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  tenant Tenant @relation(fields:[tenantId],references:[id])
+  oidcSubject String
+  email String
+  displayName String
+  role Role @default(AGENT)
+  presence Presence @default(OFFLINE)
+  disabled Boolean @default(false)
+  version Int @default(0)
+  updatedAt DateTime @updatedAt @db.Timestamptz
+  memberships QueueMember[]
+  @@unique([tenantId,id])
+  @@unique([tenantId,oidcSubject])
+  @@unique([tenantId,email])
+}
+model Queue {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  tenant Tenant @relation(fields:[tenantId],references:[id])
+  name String
+  language String?
+  slaSeconds Int @default(20)
+  wrapUpSeconds Int @default(30)
+  maxWaitSeconds Int @default(600)
+  flowId String? @db.Uuid
+  members QueueMember[]
+  @@unique([tenantId,id])
+  @@unique([tenantId,name])
+}
+model QueueMember {
+  tenantId String @db.Uuid
+  queueId String @db.Uuid
+  userId String @db.Uuid
+  proficiency Int @default(1)
+  priority Int @default(1)
+  queue Queue @relation(fields:[tenantId,queueId],references:[tenantId,id])
+  user User @relation(fields:[tenantId,userId],references:[tenantId,id])
+  @@id([tenantId,queueId,userId])
+}
+model RateCard {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  tenant Tenant @relation(fields:[tenantId],references:[id])
+  name String
+  version Int
+  kind RateKind
+  currency String @db.Char(3)
+  effectiveFrom DateTime @db.Timestamptz
+  effectiveTo DateTime? @db.Timestamptz
+  publishedAt DateTime? @db.Timestamptz
+  sha256 String @db.Char(64)
+  rates Rate[]
+  @@unique([tenantId,id])
+  @@unique([tenantId,name,version])
+}
+model Rate {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  cardId String @db.Uuid
+  card RateCard @relation(fields:[tenantId,cardId],references:[tenantId,id])
+  prefix String @db.VarChar(15)
+  country String
+  connectFee Decimal @db.Decimal(20,6)
+  perMinute Decimal @db.Decimal(20,6)
+  initialSeconds Int
+  incrementSeconds Int
+  @@unique([tenantId,cardId,prefix])
+  @@index([tenantId,prefix])
+}
+model CarrierTrunk {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  tenant Tenant @relation(fields:[tenantId],references:[id])
+  name String
+  gatewayName String
+  credentialRef String
+  costCardId String @db.Uuid
+  maxChannels Int
+  maxCps Int
+  enabled Boolean @default(false)
+  @@unique([tenantId,id])
+  @@unique([tenantId,name])
+}
+model CallLog {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  tenant Tenant @relation(fields:[tenantId],references:[id])
+  switchId String
+  switchUuid String @db.Uuid
+  parentCallId String? @db.Uuid
+  conversationId String? @db.Uuid
+  agentId String? @db.Uuid
+  queueId String? @db.Uuid
+  walletId String? @db.Uuid
+  carrierId String? @db.Uuid
+  destination String
+  direction String
+  startedAt DateTime @db.Timestamptz
+  answeredAt DateTime? @db.Timestamptz
+  endedAt DateTime? @db.Timestamptz
+  durationMs BigInt @default(0)
+  billableMs BigInt @default(0)
+  currency String @db.Char(3)
+  cost Decimal @default(0) @db.Decimal(20,6)
+  sell Decimal @default(0) @db.Decimal(20,6)
+  rateSnapshot Json
+  version Int @default(0)
+  hangupCause String?
+  finalizedAt DateTime? @db.Timestamptz
+  @@unique([tenantId,id])
+  @@unique([tenantId,switchId,switchUuid])
+  @@index([tenantId,startedAt])
+}
+model PrepaidWallet {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  tenant Tenant @relation(fields:[tenantId],references:[id])
+  currency String @db.Char(3)
+  balance Decimal @default(0) @db.Decimal(20,6)
+  reserved Decimal @default(0) @db.Decimal(20,6)
+  creditLimit Decimal @default(0) @db.Decimal(20,6)
+  mode String @default("PREPAID")
+  version Int @default(0)
+  reservations Reservation[]
+  entries LedgerEntry[]
+  @@unique([tenantId,id])
+}
+model Reservation {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  walletId String @db.Uuid
+  wallet PrepaidWallet @relation(fields:[tenantId,walletId],references:[tenantId,id])
+  callId String @db.Uuid
+  amount Decimal @db.Decimal(20,6)
+  authorizedUntil DateTime @db.Timestamptz
+  state String @default("ACTIVE")
+  settledAmount Decimal? @db.Decimal(20,6)
+  @@unique([tenantId,callId])
+}
+model LedgerEntry {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  walletId String @db.Uuid
+  wallet PrepaidWallet @relation(fields:[tenantId,walletId],references:[tenantId,id])
+  idempotencyKey String
+  amount Decimal @db.Decimal(20,6)
+  type String
+  reference String
+  createdAt DateTime @default(now()) @db.Timestamptz
+  @@unique([tenantId,idempotencyKey])
+  @@index([tenantId,walletId,createdAt])
+}
+model Invoice {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  tenant Tenant @relation(fields:[tenantId],references:[id])
+  number String
+  walletId String @db.Uuid
+  periodStart DateTime @db.Timestamptz
+  periodEnd DateTime @db.Timestamptz
+  currency String @db.Char(3)
+  subtotal Decimal @db.Decimal(20,6)
+  tax Decimal @db.Decimal(20,6)
+  total Decimal @db.Decimal(20,6)
+  taxSnapshot Json
+  state String @default("DRAFT")
+  objectKey String?
+  sha256 String?
+  issuedAt DateTime? @db.Timestamptz
+  lines InvoiceLine[]
+  @@unique([tenantId,id])
+  @@unique([tenantId,number])
+  @@unique([tenantId,walletId,periodStart,periodEnd])
+}
+model InvoiceLine {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  invoiceId String @db.Uuid
+  invoice Invoice @relation(fields:[tenantId,invoiceId],references:[tenantId,id])
+  callId String @db.Uuid
+  description String
+  durationMs BigInt
+  amount Decimal @db.Decimal(20,6)
+  @@unique([tenantId,callId])
+}
+model ChannelCredential {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  tenant Tenant @relation(fields:[tenantId],references:[id])
+  channel Channel
+  providerAccountId String
+  encryptedSecret Bytes
+  nonce Bytes
+  authTag Bytes
+  keyId String
+  enabled Boolean @default(false)
+  rotatedAt DateTime? @db.Timestamptz
+  @@unique([tenantId,channel,providerAccountId])
+}
+model Conversation {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  channel Channel
+  externalId String
+  queueId String? @db.Uuid
+  assignedUserId String? @db.Uuid
+  status String @default("OPEN")
+  chatwootAccountId Int?
+  chatwootConversationId Int?
+  createdAt DateTime @default(now()) @db.Timestamptz
+  @@unique([tenantId,id])
+  @@unique([tenantId,channel,externalId])
+}
+model Message {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  conversationId String @db.Uuid
+  providerEventId String
+  body String?
+  mediaObjectKey String?
+  direction String
+  createdAt DateTime @default(now()) @db.Timestamptz
+  @@unique([tenantId,providerEventId])
+}
+model Flow {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  name String
+  version Int
+  graph Json
+  publishedAt DateTime? @db.Timestamptz
+  @@unique([tenantId,id])
+  @@unique([tenantId,name,version])
+}
+model CallbackRequest {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  queueId String @db.Uuid
+  destination String
+  originalEnqueuedAt DateTime @db.Timestamptz
+  nextAttemptAt DateTime @db.Timestamptz
+  attempts Int @default(0)
+  state String @default("WAITING")
+  leaseUntil DateTime? @db.Timestamptz
+  @@index([tenantId,state,nextAttemptAt])
+}
+model Recording {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  callId String @db.Uuid
+  objectKey String
+  keyId String
+  sha256 String @db.Char(64)
+  retainUntil DateTime @db.Timestamptz
+  legalHold Boolean @default(false)
+  transcript Json?
+  @@unique([tenantId,callId,objectKey])
+}
+model Outbox {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  aggregateId String
+  eventType String
+  payload Json
+  createdAt DateTime @default(now()) @db.Timestamptz
+  publishedAt DateTime? @db.Timestamptz
+  @@index([publishedAt,createdAt])
+}
+model AuditEvent {
+  id String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  actorId String
+  action String
+  resourceId String
+  reason String?
+  details Json
+  createdAt DateTime @default(now()) @db.Timestamptz
+  @@index([tenantId,createdAt])
+}

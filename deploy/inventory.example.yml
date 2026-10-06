@@ -1,0 +1,15 @@
+region: malaysia-primary
+# PRIVATE examples, replace with actual infrastructure. No automatic provisioning.
+sip_edges:
+  - {name: sip01, private_ip: 10.20.1.11, public_ip: REPLACE, cpu: 4, ram_gib: 8}
+  - {name: sip02, private_ip: 10.20.1.12, public_ip: REPLACE, cpu: 4, ram_gib: 8}
+media:
+  - {name: fs01, private_ip: 10.20.2.11, public_ip: REPLACE, cpu: 16, ram_gib: 32}
+  - {name: fs02, private_ip: 10.20.2.12, public_ip: REPLACE, cpu: 16, ram_gib: 32}
+  - {name: fs03, private_ip: 10.20.2.13, public_ip: REPLACE, cpu: 16, ram_gib: 32}
+turn:
+  - {name: turn01, private_ip: 10.20.4.11, public_ip: REPLACE, cpu: 4, ram_gib: 8}
+  - {name: turn02, private_ip: 10.20.4.12, public_ip: REPLACE, cpu: 4, ram_gib: 8}
+application_replicas: 3
+postgres: {nodes: 3, cpu_per_node: 8, ram_gib_per_node: 32, storage: mirrored_nvme}
+redis: {data_nodes: 3, sentinels: 3}

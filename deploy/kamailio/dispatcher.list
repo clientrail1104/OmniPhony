@@ -1,0 +1,4 @@
+# setid destination flags priority attrs
+1 sip:10.20.2.11:5060 0 10 duid=fs01
+1 sip:10.20.2.12:5060 0 10 duid=fs02
+1 sip:10.20.2.13:5060 0 10 duid=fs03

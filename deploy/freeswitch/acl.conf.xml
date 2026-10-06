@@ -1,0 +1,6 @@
+<configuration name="acl.conf" description="Network trust">
+ <network-lists>
+  <list name="control" default="deny"><node type="allow" cidr="10.20.3.0/24"/></list>
+  <list name="sip-edge" default="deny"><node type="allow" cidr="10.20.1.11/32"/><node type="allow" cidr="10.20.1.12/32"/></list>
+ </network-lists>
+</configuration>
