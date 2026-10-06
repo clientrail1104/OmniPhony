@@ -1,5 +1,0 @@
-card,version,kind,carrier,country,prefix,currency,connect_fee,per_minute,initial_seconds,increment_seconds,effective_from,effective_to
-retail,1,SELL,,Malaysia,60,MYR,0.010000,0.120000,30,6,2026-01-01T00:00:00Z,
-retail,1,SELL,,Malaysia Mobile,601,MYR,0.020000,0.180000,30,6,2026-01-01T00:00:00Z,
-carrier-a,1,COST,a,Malaysia,60,MYR,0.000000,0.060000,60,60,2026-01-01T00:00:00Z,
-carrier-b,1,COST,b,Malaysia Mobile,601,MYR,0.020000,0.040000,1,1,2026-01-01T00:00:00Z,
