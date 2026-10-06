@@ -1,2 +1,0 @@
-psycopg[binary]==3.2.10
-reportlab==4.4.4
